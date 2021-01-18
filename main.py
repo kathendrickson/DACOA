@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Oct 13 13:38:32 2020
+
+@author: kat.hendrickson
+"""
+
+import numpy as np
+
+# Algorithm Parameters
+n = 10         # number of primal agents
+m = 6          # number of dual agents
+delta = 0.001   # dual regularization parameter
+rho = 2.1*(6-np.sqrt(3))/(6*delta) # primal step-size
+gamma = (1/2)*(1/120018)    # dual step-size
+
+beta_adj = 1        # used for analysis in this particular problem; set to 1.
+
+# Find "Actual" Solution
+import cvxpySol
+[xActual, muActual] = cvxpySol.findActual()
+
+from algorithm import DACOA
+
+xScalar = DACOA(delta, gamma, rho, n, m)
+
+xScalar.setActual(xActual,muActual)
+
+xScalar.setInit(10*np.ones(n), np.zeros(m))
+
+xScalar.stopIf(10 ** -8,10 ** 4,flagIter=1)
+
+xScalar.run()
+
+xClouds = DACOA(delta, gamma, rho, n, m)
+
+xClouds.setActual(xActual,muActual)
+
+xClouds.setInit(10*np.ones(n), np.zeros(m))
+
+xClouds.defBlocks([0],[0])
+
+xClouds.stopIf(10 ** -8,10**4,flagIter=1)
+
+xClouds.run()
