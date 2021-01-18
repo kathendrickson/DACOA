@@ -21,14 +21,14 @@ barray= np.array([-2,4,-10,5,1,8])
 def gradPrimal(self,x,mu,agent):
     a=self.xBlocks[agent]  #lower boundary of block (included)
     b=self.xBlocks[agent+1]#upper boundary of block (not included)
-    xi=x[a:b]
-    sumterm=0
-    for j in range(self.Np):
-        if j != (agent) :
-            ja = self.xBlocks[j]
-            jb = self.xBlocks[j+1]
-            sumterm=sumterm + 4*(xi - x[ja:jb])
-    gradient= 4*(xi**3) + (1/20)*sumterm + mu @ A[:,a:b]
+    gradient=[]
+    for i in range(a,b):
+        xi=x[i]
+        sumterm=0
+        for j in range(self.n):     #figure this out
+            if j != (i) :
+                sumterm=sumterm + 4*(xi - x[j])
+        gradient= np.append(gradient, 4*(xi**3) + (1/20)*sumterm + mu @ A[:,i])
     return gradient
 
 def gradDual(self,x,mu,agent):

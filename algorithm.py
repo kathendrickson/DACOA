@@ -30,13 +30,21 @@ class DACOA():
         self.flagIter=0     #updated with stopIf function
         self.xInit = np.zeros(n)
         self.muInit = np.zeros(m)
+        self.scalarFlag=0
 
     def setActual(self,xActual,muActual):
-        """Set the true primal and dual variables. If set, values will be used to calculate error.
+        """If known, true values for primal and dual variables may be set
+        and used for error calculations.
         
         Inputs:
             xActual - true value for primal variable
-            muActual - true value for dual variable"""
+            muActual - true value for dual variable
+        
+        Outputs:
+            If set, class values self.xError and self.muError will be calculated.
+            These vectors calculate the error calculate the L2 norm of the
+            distance between xActual and the iterate's value for the primal 
+            variable."""
         self.flagActual=1
         if np.size(xActual) == self.n:
             self.xActual=xActual
@@ -76,6 +84,9 @@ class DACOA():
             self.muInit = muInit
         else:
             print("Error: Dimension mismatch between muInit and previously defined m.")
+    
+    def useScalars(self):
+        self.scalarFlag=1
     
     ## Change Algorithm Stopping Parameters
     def stopIf(self,tol,maxIter,flagIter):
@@ -122,11 +133,19 @@ class DACOA():
                 x = Xp[:,p]
                 a=self.xBlocks[p]  #lower boundary of block (included)
                 b=self.xBlocks[p+1] #upper boundary of block (not included)
-                pGradient = inputs.gradPrimal(self,x,mu,p)
-                gradRow[a:b]=pGradient
-                pUpdate = x[a:b] - self.gamma*pGradient
-                Xp[a:b,p] = inputs.projPrimal(pUpdate)
-                xVector[a:b] = Xp[a:b,p]
+                if self.scalarFlag == 0:
+                    pGradient = inputs.gradPrimal(self,x,mu,p)
+                    gradRow[a:b]=pGradient
+                    pUpdate = x[a:b] - self.gamma*pGradient
+                    Xp[a:b,p] = inputs.projPrimal(pUpdate)
+                    xVector[a:b] = Xp[a:b,p]
+                elif self.scalarFlag == 1:
+                    for i in range(a,b):
+                        pGradient = inputs.gradPrimal(self,x,mu,i)
+                        gradRow[i]=pGradient
+                        pUpdate = x[i] - self.gamma*pGradient
+                        Xp[i,p] = inputs.projPrimal(pUpdate)
+                        xVector[i] = Xp[i,p]
             gradMatrix =np.vstack((gradMatrix,gradRow))
             
             # Communicate Primal Updates
@@ -139,10 +158,17 @@ class DACOA():
                 if dCount_nz[d] >= Np:
                     a=self.muBlocks[d]  #lower boundary of block (included)
                     b=self.muBlocks[d+1] #upper boundary of block (not included)
-                    dGradient = inputs.gradDual(self,Xd[:,d],mu[a:b],d)
-                    dUpdate = mu[a:b] + self.rho*dGradient
-                    t[d]=t[d]+1
-                    mu[a:b] = inputs.projDual(dUpdate)
+                    if self.scalarFlag == 0:
+                        dGradient = inputs.gradDual(self,Xd[:,d],mu[a:b],d)
+                        dUpdate = mu[a:b] + self.rho*dGradient
+                        t[d]=t[d]+1
+                        mu[a:b] = inputs.projDual(dUpdate)
+                    elif self.scalarFlag == 1:
+                        for j in range(a,b):
+                            dGradient = inputs.gradDual(self,Xd[:,d],mu[j],j)
+                            dUpdate = mu[j] + self.rho*dGradient
+                            t[d]=t[d]+1
+                            mu[j] = inputs.projDual(dUpdate)
                     dCount=np.zeros((Np,Nd))    # resets update counter for ALL dual agents if at least one has updated
             # Calculate Iteration Distance and Errors
             k=k+1       # used to count number of iterations (may also be used to limit runs)
