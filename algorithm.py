@@ -89,13 +89,14 @@ class DACOA():
         self.scalarFlag=1
     
     ## Change Algorithm Stopping Parameters
-    def stopIf(self,tol,maxIter,flagIter):
+    def stopIf(self,tol,maxIter,flagIter, suppress=1):
         self.tolerance = tol
         self.maxIter = maxIter
         self.flagIter = flagIter    #1 = stop based when maxIter reached
-        print("Tolerance set to: ",self.tolerance)
-        print("Max number of iterations set to: ",self.maxIter)
-        print("Algorithm will stop when max number of iterations is reached: ", bool(self.flagIter))
+        if suppress == 0:
+            print("Tolerance set to: ",self.tolerance)
+            print("Max number of iterations set to: ",self.maxIter)
+            print("Algorithm will stop when max number of iterations is reached: ", bool(self.flagIter))
     
     def run(self):
         inputs = importlib.import_module(self.filenames[0])
