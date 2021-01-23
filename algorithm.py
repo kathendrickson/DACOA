@@ -165,11 +165,13 @@ class DACOA():
                         t[d]=t[d]+1
                         mu[a:b] = inputs.projDual(dUpdate)
                     elif self.scalarFlag == 1:
+                        muNew = mu  #stored separately so block updates don't use new data
                         for j in range(a,b):
                             dGradient = inputs.gradDual(self,Xd[:,d],mu[j],j)
                             dUpdate = mu[j] + self.rho*dGradient
                             t[d]=t[d]+1
-                            mu[j] = inputs.projDual(dUpdate)
+                            muNew[j] = inputs.projDual(dUpdate)
+                        mu = muNew
                     dCount=np.zeros((Np,Nd))    # resets update counter for ALL dual agents if at least one has updated
             # Calculate Iteration Distance and Errors
             k=k+1       # used to count number of iterations (may also be used to limit runs)
@@ -189,3 +191,41 @@ class DACOA():
         self.muFinal = mu
         self.gradMatrix = gradMatrix
         return self.xFinal, self.muFinal
+    
+    def singlePrimal(self,x,mu,agent):
+        inputs = importlib.import_module(self.filenames[0])
+        xUpdated = x
+        a=self.xBlocks[agent]  #lower boundary of block (included)
+        b=self.xBlocks[agent+1] #upper boundary of block (not included)
+        
+        if self.scalarFlag == 0:
+            pGradient = inputs.gradPrimal(self,x,mu,agent)
+            pUpdate = x[a:b] - self.gamma*pGradient
+            xUpdated[a:b] = inputs.projPrimal(pUpdate)
+        elif self.scalarFlag == 1:
+            for i in range(a,b):
+                pGradient = inputs.gradPrimal(self,x,mu,agent)
+                pUpdate = x[i] - self.gamma*pGradient
+                xUpdated[i] = inputs.projPrimal(pUpdate)
+                
+        return xUpdated
+
+    def singleDual(self,x,mu,agent):
+        """ Note: This assumes that the check for primal updates has been handled elsewhere.
+        
+        The mu here is only that agents block - not the entirety of the mu vector. This is because dual agents need not receive other dual updates."""
+        
+        inputs = importlib.import_module(self.filenames[0])
+        muUpdated=mu
+        
+        if self.scalarFlag == 0:
+            dGradient = inputs.gradDual(self,x,mu,agent)
+            dUpdate = mu + self.rho*dGradient
+            muUpdated = inputs.projDual(dUpdate)
+        elif self.scalarFlag == 1:
+            for j in range(np.size(mu)):
+                dGradient = inputs.gradDual(self,x,mu[j],j)
+                dUpdate = mu[j] + self.rho*dGradient
+                muUpdated[j] = inputs.projDual(dUpdate)
+        
+        return muUpdated
