@@ -12,10 +12,8 @@ import numpy as np
 n = 10         # number of primal agents
 m = 6          # number of dual agents
 delta = 0.001   # dual regularization parameter
-rho = 2.1*(6-np.sqrt(3))/(6*delta) # primal step-size
-gamma = (1/2)*(1/120018)    # dual step-size
-
-beta_adj = 1        # used for analysis in this particular problem; set to 1.
+rho = 2.1*(6-np.sqrt(3))/(6*delta) # dual step-size
+gamma = (1/2)*(1/120018)    # primal step-size
 
 # Find "Actual" Solution
 import cvxpySol
