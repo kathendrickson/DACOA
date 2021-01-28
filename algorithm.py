@@ -217,15 +217,24 @@ class DACOA():
         
         inputs = importlib.import_module(self.filenames[0])
         muUpdated=mu
+        a=self.muBlocks[agent]  #lower boundary of block (included)
+        b=self.muBlocks[agent+1]
+        i=0
         
         if self.scalarFlag == 0:
             dGradient = inputs.gradDual(self,x,mu,agent)
             dUpdate = mu + self.rho*dGradient
             muUpdated = inputs.projDual(dUpdate)
         elif self.scalarFlag == 1:
-            for j in range(np.size(mu)):
-                dGradient = inputs.gradDual(self,x,mu[j],j)
-                dUpdate = mu[j] + self.rho*dGradient
-                muUpdated[j] = inputs.projDual(dUpdate)
+            if np.size(mu) == 1:
+                dGradient = inputs.gradDual(self,x,mu,agent)
+                dUpdate = mu + self.rho*dGradient
+                muUpdated = inputs.projDual(dUpdate)
+            else:
+                for j in range(a,b):
+                    dGradient = inputs.gradDual(self,x,mu[i],j)
+                    dUpdate = mu[i] + self.rho*dGradient
+                    muUpdated[i] = inputs.projDual(dUpdate)
+                    i += 1
         
         return muUpdated
