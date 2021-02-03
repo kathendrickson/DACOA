@@ -194,7 +194,7 @@ class DACOA():
     
     def singlePrimal(self,x,mu,agent):
         inputs = importlib.import_module(self.filenames[0])
-        xUpdated = x
+        xUpdated = np.copy(x)
         a=self.xBlocks[agent]  #lower boundary of block (included)
         b=self.xBlocks[agent+1] #upper boundary of block (not included)
         
@@ -204,7 +204,7 @@ class DACOA():
             xUpdated[a:b] = inputs.projPrimal(pUpdate)
         elif self.scalarFlag == 1:
             for i in range(a,b):
-                pGradient = inputs.gradPrimal(self,x,mu,agent)
+                pGradient = inputs.gradPrimal(self,x,mu,i)
                 pUpdate = x[i] - self.gamma*pGradient
                 xUpdated[i] = inputs.projPrimal(pUpdate)
                 
@@ -216,7 +216,7 @@ class DACOA():
         The mu here is only that agents block - not the entirety of the mu vector. This is because dual agents need not receive other dual updates."""
         
         inputs = importlib.import_module(self.filenames[0])
-        muUpdated=mu
+        muUpdated=np.copy(mu)
         a=self.muBlocks[agent]  #lower boundary of block (included)
         b=self.muBlocks[agent+1]
         i=0
