@@ -47,21 +47,21 @@ class DACOA():
             variable."""
         self.flagActual=1
         if np.size(xActual) == self.n:
-            self.xActual=xActual
+            self.xActual=np.copy(xActual)
         else: 
             self.flagActual=0
             print("Error: Dimension mismatch between xActual and previously defined n.")
         if np.size(muActual) == self.m:
-            self.muActual=muActual
+            self.muActual=np.copy(muActual)
         else:
             self.flagActual=0
             print("Error: Dimension mismatch between muActual and previously defined m.")
         
     ## Divide vectors into blocks larger than scalars
     def defBlocks(self,xBlocks,muBlocks):
-        self.xBlocks = xBlocks
+        self.xBlocks = np.copy(xBlocks)
         self.xBlocks = np.append(self.xBlocks,[self.n])  #used to know the end of the last block.
-        self.muBlocks = muBlocks
+        self.muBlocks = np.copy(muBlocks)
         self.muBlocks = np.append(self.muBlocks,[self.m])  #used to know the end of the last block.
         
     ## Change input file names
@@ -77,11 +77,11 @@ class DACOA():
     
     def setInit(self,xInit,muInit):
         if np.size(xInit) == self.n:
-            self.xInit=xInit
+            self.xInit=np.copy(xInit)
         else:
             print("Error: Dimension mismatch between xInit and previously defined n.")
         if np.size(muInit) == self.m:
-            self.muInit = muInit
+            self.muInit = np.copy(muInit)
         else:
             print("Error: Dimension mismatch between muInit and previously defined m.")
     
@@ -109,16 +109,16 @@ class DACOA():
         self.Nd = Nd
         Xp = np.outer(self.xInit,np.ones(self.Np))  #initialize primal matrix
         Xd = np.outer(self.xInit,np.ones(self.Nd))       #initialize dual matrix
-        mu = self.muInit
+        mu = np.copy(self.muInit)
     
         dCount = np.zeros((Np,Nd))    #initialize dCount vector
         t = np.zeros(Nd)    #initialize t vector for each dual agent
         convdiff=[self.tolerance + 100]        #initialize convergence distance measure
-        xError=[la.norm(np.diag(Xp) - self.xActual,2)]
+        xError=[la.norm(self.xInit- self.xActual,2)]
         muError=[la.norm(mu-self.muActual,2)]
         gradRow = np.zeros(self.n)
         gradMatrix= np.array(gradRow)
-        xVector = self.xInit
+        xVector = np.copy(self.xInit)
         
         # Convergence Parameters
         k=0
@@ -127,11 +127,11 @@ class DACOA():
             if (self.flagIter == 1 and k >= self.maxIter):
                 break
             
-            prevIter = np.array(xVector)   #used to determine convdiff
+            prevIter = np.copy(xVector)   #used to determine convdiff
             
             # Update Primal Variables
             for p in range(Np):
-                x = Xp[:,p]
+                x = np.copy(Xp[:,p])
                 a=self.xBlocks[p]  #lower boundary of block (included)
                 b=self.xBlocks[p+1] #upper boundary of block (not included)
                 if self.scalarFlag == 0:
@@ -139,18 +139,18 @@ class DACOA():
                     gradRow[a:b]=pGradient
                     pUpdate = x[a:b] - self.gamma*pGradient
                     Xp[a:b,p] = inputs.projPrimal(pUpdate)
-                    xVector[a:b] = Xp[a:b,p]
+                    xVector[a:b] = np.copy(Xp[a:b,p])
                 elif self.scalarFlag == 1:
                     for i in range(a,b):
                         pGradient = inputs.gradPrimal(self,x,mu,i)
                         gradRow[i]=pGradient
                         pUpdate = x[i] - self.gamma*pGradient
                         Xp[i,p] = inputs.projPrimal(pUpdate)
-                        xVector[i] = Xp[i,p]
+                        xVector[i] = np.copy(Xp[i,p])
             gradMatrix =np.vstack((gradMatrix,gradRow))
             
             # Communicate Primal Updates
-            [Xp, Xd, dup] = communicate.comm(self,Xp, Xd)
+            [Xp, Xd, dup] = communicate.comm(self, Xp, Xd)
             
             # Update Dual Variables if they have received updates from all primal agents
             dCount = dCount + dup
@@ -165,17 +165,17 @@ class DACOA():
                         t[d]=t[d]+1
                         mu[a:b] = inputs.projDual(dUpdate)
                     elif self.scalarFlag == 1:
-                        muNew = mu  #stored separately so block updates don't use new data
+                        muNew = np.copy(mu)  #stored separately so block updates don't use new data
                         for j in range(a,b):
                             dGradient = inputs.gradDual(self,Xd[:,d],mu[j],j)
                             dUpdate = mu[j] + self.rho*dGradient
                             t[d]=t[d]+1
                             muNew[j] = inputs.projDual(dUpdate)
-                        mu = muNew
+                        mu = np.copy(muNew)
                     dCount=np.zeros((Np,Nd))    # resets update counter for ALL dual agents if at least one has updated
             # Calculate Iteration Distance and Errors
             k=k+1       # used to count number of iterations (may also be used to limit runs)
-            newIter = xVector
+            newIter = np.copy(xVector)
             iterNorm = la.norm(prevIter - newIter)  #L2 norm of the diff between prev and current iterations
             convdiff.append(iterNorm)
             xError.append(la.norm(xVector - self.xActual,2))
