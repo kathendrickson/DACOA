@@ -37,7 +37,7 @@ def gradPrimal(self,x,mu,agent):
     gradient=[]
     for i in range(a,b):
         xi=x[i]
-        gradient= np.append(gradient, -100/(1+xi) + mu @ A[:,i])
+        gradient= np.append(gradient, -1/(1+xi) + mu @ A[:,i])
     return gradient
 
 def gradDual(self,x,mu,agent):
