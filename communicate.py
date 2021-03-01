@@ -8,8 +8,7 @@ Created on Mon Nov  2 20:09:38 2020
 
 import numpy as np
 
-def comm(self,Xp, Xd):
-    comm_rate = 1
+def comm(self,Xp, Xd, comm_rate):
     Np = self.Np
     Nd = self.Nd
     
@@ -24,7 +23,7 @@ def comm(self,Xp, Xd):
             if i != j:
                 if B[i,j] <= comm_rate:
                     B[i,j] = 1
-                    X_new[a:b,j] = Xp[a:b,i]
+                    X_new[a:b,j] = np.copy(Xp[a:b,i])
                     if j >= Np:
                         dup[i,j-Np] = 1
     

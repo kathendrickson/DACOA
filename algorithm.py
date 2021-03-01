@@ -31,6 +31,7 @@ class DACOA():
         self.xInit = np.zeros(n)
         self.muInit = np.zeros(m)
         self.scalarFlag=0
+        self.commRate = 1
 
     def setActual(self,xActual,muActual):
         """If known, true values for primal and dual variables may be set
@@ -98,6 +99,9 @@ class DACOA():
             print("Max number of iterations set to: ",self.maxIter)
             print("Algorithm will stop when max number of iterations is reached: ", bool(self.flagIter))
     
+    def setCommRate(self,commRate):
+        self.commRate = commRate
+    
     def run(self):
         inputs = importlib.import_module(self.filenames[0])
         communicate = importlib.import_module(self.filenames[1])
@@ -150,7 +154,7 @@ class DACOA():
             gradMatrix =np.vstack((gradMatrix,gradRow))
             
             # Communicate Primal Updates
-            [Xp, Xd, dup] = communicate.comm(self, Xp, Xd)
+            [Xp, Xd, dup] = communicate.comm(self, Xp, Xd, self.commRate)
             
             # Update Dual Variables if they have received updates from all primal agents
             dCount = dCount + dup
@@ -192,8 +196,7 @@ class DACOA():
         self.gradMatrix = gradMatrix
         return self.xFinal, self.muFinal
     
-    def singlePrimal(self,x,mu,agent):
-        inputs = importlib.import_module(self.filenames[0])
+    def singlePrimal(self,x,mu,agent, inputs):
         xUpdated = np.copy(x)
         a=self.xBlocks[agent]  #lower boundary of block (included)
         b=self.xBlocks[agent+1] #upper boundary of block (not included)
@@ -210,12 +213,11 @@ class DACOA():
                 
         return xUpdated
 
-    def singleDual(self,x,mu,agent):
+    def singleDual(self,x,mu,agent,inputs):
         """ Note: This assumes that the check for primal updates has been handled elsewhere.
         
         The mu here is only that agents block - not the entirety of the mu vector. This is because dual agents need not receive other dual updates."""
-        
-        inputs = importlib.import_module(self.filenames[0])
+
         muUpdated=np.copy(mu)
         a=self.muBlocks[agent]  #lower boundary of block (included)
         b=self.muBlocks[agent+1]
