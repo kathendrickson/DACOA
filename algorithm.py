@@ -11,7 +11,7 @@ import scipy.linalg as la
 import importlib
 
 class DACOA():
-    def __init__(self,delta, gamma, rho, n, m):
+    def __init__(self,delta, gamma, rho, n, m, inputClass):
         self.delta=delta
         self.gamma=gamma
         self.rho=rho
@@ -196,47 +196,48 @@ class DACOA():
         self.gradMatrix = gradMatrix
         return self.xFinal, self.muFinal
     
-    def singlePrimal(self,x,mu,agent, inputs):
+    def singlePrimal(self,x,mu,agent,inputClass):
         xUpdated = np.copy(x)
         a=self.xBlocks[agent]  #lower boundary of block (included)
         b=self.xBlocks[agent+1] #upper boundary of block (not included)
         
         if self.scalarFlag == 0:
-            pGradient = inputs.gradPrimal(self,x,mu,agent)
+            pGradient = inputClass.gradPrimal(self,x,mu,agent)
             pUpdate = x[a:b] - self.gamma*pGradient
-            xUpdated[a:b] = inputs.projPrimal(pUpdate)
+            xUpdated[a:b] = inputClass.projPrimal(pUpdate)
         elif self.scalarFlag == 1:
             for i in range(a,b):
-                pGradient = inputs.gradPrimal(self,x,mu,i)
+                pGradient = inputClass.gradPrimal(self,x,mu,i)
                 pUpdate = x[i] - self.gamma*pGradient
-                xUpdated[i] = inputs.projPrimal(pUpdate)
+                print(pUpdate)
+                xUpdated[i] = inputClass.projPrimal(pUpdate)
                 
         return xUpdated
 
-    def singleDual(self,x,mu,agent,inputs):
+    def singleDual(self,x,mu,agent,inputClass):
         """ Note: This assumes that the check for primal updates has been handled elsewhere.
         
         The mu here is only that agents block - not the entirety of the mu vector. This is because dual agents need not receive other dual updates."""
-
+        
         muUpdated=np.copy(mu)
         a=self.muBlocks[agent]  #lower boundary of block (included)
         b=self.muBlocks[agent+1]
         i=0
         
         if self.scalarFlag == 0:
-            dGradient = inputs.gradDual(self,x,mu,agent)
+            dGradient = inputClass.gradDual(self,x,mu,agent)
             dUpdate = mu + self.rho*dGradient
-            muUpdated = inputs.projDual(dUpdate)
+            muUpdated = inputClass.projDual(dUpdate)
         elif self.scalarFlag == 1:
             if np.size(mu) == 1:
-                dGradient = inputs.gradDual(self,x,mu,agent)
+                dGradient = inputClass.gradDual(self,x,mu,agent)
                 dUpdate = mu + self.rho*dGradient
-                muUpdated = inputs.projDual(dUpdate)
+                muUpdated = inputClass.projDual(dUpdate)
             else:
                 for j in range(a,b):
-                    dGradient = inputs.gradDual(self,x,mu[i],j)
+                    dGradient = inputClass.gradDual(self,x,mu[i],j)
                     dUpdate = mu[i] + self.rho*dGradient
-                    muUpdated[i] = inputs.projDual(dUpdate)
+                    muUpdated[i] = inputClass.projDual(dUpdate)
                     i += 1
         
         return muUpdated

@@ -13,31 +13,31 @@ n = 10         # number of primal agents
 m = 5          # number of dual agents
 #delta = 0.001   # dual regularization parameter
 
-gamma = .1    # dual step-size
+gamma = .1    # primal step-size
 
 
 from algorithm import DACOA
 
-for delta in [.0001, .001, .01, .1, 1, 10]:
-    rho = delta/(delta ** 2 + 2) # primal step-size
+# for delta in [.0001, .001, .01, .1, 1, 10]:
+#     rho = delta/(delta ** 2 + 2) # dual step-size
     
-    for gamma in [.0001, .001, .01, .1, 1, 10]:
+#     for gamma in [.0001, .001, .01, .1, 1, 10]:
     
-        xScalar = DACOA(delta, gamma, rho, n, m)
+#         xScalar = DACOA(delta, gamma, rho, n, m)
 
-        xScalar.inputFiles("inputs_wta","communicate")
+#         xScalar.inputFiles("inputs_wta","communicate")
 
-        xScalar.setInit(.5*np.ones(n),np.zeros(m))
+#         xScalar.setInit(.5*np.ones(n),np.zeros(m))
 
-        xScalar.stopIf(10 ** -8,10**4,flagIter=1)
+#         xScalar.stopIf(10 ** -8,10**4,flagIter=1)
 
-        xScalar.useScalars()
+#         xScalar.useScalars()
 
-        xScalar.run()
+#         xScalar.run()
     
-        print("delta = ", delta, "gamma = ", gamma)
-        print("Number of iterations: ", xScalar.numIter)
-        print("Final primal variable: ", xScalar.xFinal)
+#         print("delta = ", delta, "gamma = ", gamma)
+#         print("Number of iterations: ", xScalar.numIter)
+#         print("Final primal variable: ", xScalar.xFinal)
 
 # import matplotlib.pyplot as plt
 # import seaborn as sns
@@ -55,3 +55,32 @@ for delta in [.0001, .001, .01, .1, 1, 10]:
 # plt.title("Convergence as a Function of Iteration Number")
 # plt.show()
 
+from inputs_wta import inputs
+
+inputs=inputs()
+delta = .01
+rho = delta/(delta ** 2 + 2)
+gamma = 1
+
+num_weapons = 5
+num_targets = 2
+my_number = 4
+n = num_weapons * num_targets    #size of primal variable
+m = num_weapons                       #size of dual variable
+pBlocks = num_targets*np.arange(num_weapons)
+        
+opt = DACOA(delta,gamma,rho, n, m, inputs)
+
+opt.inputFiles("inputs_wta","communicate")
+
+opt.defBlocks(pBlocks,np.arange(m))
+opt.useScalars()
+
+a=opt.xBlocks[my_number]  #lower boundary of primal block (included)
+b=opt.xBlocks[my_number+1] #upper boundary of primal block (not included)
+
+mu = np.zeros(m)  #shared in primal and dual updates
+x = .5*np.ones(n) #shared in primal and dual updates
+xUpdated = opt.singlePrimal(x, mu, my_number,inputs)
+muUpdated = opt.singleDual(x,mu[my_number],my_number,inputs)
+print(xUpdated)
