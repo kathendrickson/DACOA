@@ -209,7 +209,7 @@ class DACOA():
             for i in range(a,b):
                 pGradient = inputClass.gradPrimal(self,x,mu,i)
                 pUpdate = x[i] - self.gamma*pGradient
-                print(pUpdate)
+                # print(pUpdate)
                 xUpdated[i] = inputClass.projPrimal(pUpdate)
                 
         return xUpdated
