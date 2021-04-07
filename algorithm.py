@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
@@ -103,7 +104,8 @@ class DACOA():
         self.commRate = commRate
     
     def run(self):
-        inputs = importlib.import_module(self.filenames[0])
+        inputsImport = importlib.import_module(self.filenames[0])
+        inputs =inputsImport.inputs()
         communicate = importlib.import_module(self.filenames[1])
         
         # Initialize Primal and Dual Variables
