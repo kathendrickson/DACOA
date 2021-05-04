@@ -35,41 +35,41 @@ xScalar.run()
 print("Number of iterations: ", xScalar.numIter)
 print("Final primal variable: ", xScalar.xFinal)
 
-# print("Running with Clouds (blocks of size n and m)...")
-# xClouds = DACOA(delta, gamma, rho, n, m)
+print("Running with Clouds (blocks of size n and m)...")
+xClouds = DACOA(delta, gamma, rho, n, m)
 
-# xClouds.setActual(xActual,muActual)
+xClouds.setActual(xActual,muActual)
 
-# xClouds.setInit(10*np.ones(n), np.zeros(m))
+xClouds.setInit(10*np.ones(n), np.zeros(m))
 
-# xClouds.defBlocks([0],[0])
+xClouds.defBlocks([0],[0])
 
-# xClouds.stopIf(10 ** -8,10**4,flagIter=1)
+xClouds.stopIf(10 ** -8,10**4,flagIter=1)
 
-# xClouds.run()
+xClouds.run()
 
-# print("Number of iterations: ", xClouds.numIter)
-# print("Final primal variable: ", xClouds.xFinal)
+print("Number of iterations: ", xClouds.numIter)
+print("Final primal variable: ", xClouds.xFinal)
 
-# print("Running with Single Gradient Function Option...")
-# xSG = DACOA(delta, gamma, rho, n, m)
+print("Running with Single Gradient Function Option...")
+xSG = DACOA(delta, gamma, rho, n, m)
 
-# xSG.setActual(xActual,muActual)
+xSG.setActual(xActual,muActual)
 
-# xSG.setInit(10*np.ones(n), np.zeros(m))
+xSG.setInit(10*np.ones(n), np.zeros(m))
 
-# xSG.defBlocks([0],[0])
+xSG.defBlocks([0],[0])
 
-# xSG.stopIf(10 ** -8,10**4,flagIter=1)
+xSG.stopIf(10 ** -8,10**4,flagIter=1)
 
-# xSG.useScalars()
+xSG.useScalars()
 
-# xSG.inputFiles("inputs_singlegrad","communicate")
+xSG.inputFiles("inputs_singlegrad","communicate")
 
-# xSG.run()
+xSG.run()
 
-# print("Number of iterations: ", xSG.numIter)
-# print("Final primal variable: ", xSG.xFinal)
+print("Number of iterations: ", xSG.numIter)
+print("Final primal variable: ", xSG.xFinal)
 
 import matplotlib.pyplot as plt
 import seaborn as sns
