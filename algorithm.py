@@ -9,10 +9,19 @@ Created on Mon Nov  2 11:13:42 2020
 
 import numpy as np
 import scipy.linalg as la
-import importlib
 
 class DACOA():
-    def __init__(self,delta, gamma, rho, n, m, inputClass):
+    def __init__(self, delta, gamma, rho, n, m, inputClass, commClass):
+        """Initialize DACOA algorithm with inputs.
+        Parameters:
+            delta: dual regularization parameter
+            gamma: primal stepsize
+            rho: dual stepsize
+            n: size of the primal variable
+            m: size of the dual variable
+            inputClass: input class that contains the gradPrimal, gradDual, projPrimal, and projDual functions
+            commClass: input class that contains the comm function
+        """
         self.delta=delta
         self.gamma=gamma
         self.rho=rho
@@ -25,7 +34,6 @@ class DACOA():
         self.flagActual=0   #sets flag to zero - used to determine whether to store error data later.
         self.xBlocks=np.arange(n+1)    #vector blocks are set with defBlocks
         self.muBlocks=np.arange(m+1)      #vector blocks are set with defBlocks
-        self.filenames = ['inputs','communicate']
         self.tolerance = 10 ** -8   #updated with stopIf function
         self.maxIter = 10 ** 3      #updated with stopIf function
         self.flagIter=0     #updated with stopIf function
@@ -33,6 +41,8 @@ class DACOA():
         self.muInit = np.zeros(m)
         self.scalarFlag=0
         self.commRate = 1
+        self.inputClass = inputClass
+        self.commClass = commClass
 
     def setActual(self,xActual,muActual):
         """If known, true values for primal and dual variables may be set
@@ -65,17 +75,6 @@ class DACOA():
         self.xBlocks = np.append(self.xBlocks,[self.n])  #used to know the end of the last block.
         self.muBlocks = np.copy(muBlocks)
         self.muBlocks = np.append(self.muBlocks,[self.m])  #used to know the end of the last block.
-        
-    ## Change input file names
-    def inputFiles(self,newInputs,newComms):
-        if isinstance(newInputs,str):
-            self.filenames[0]=newInputs
-        else:
-            print("Error: Input filename must be a string.")
-        if isinstance(newComms,str):
-            self.filenames[1]=newComms
-        else:
-            print("Error: Communications filename must be a string.")
     
     def setInit(self,xInit,muInit):
         if np.size(xInit) == self.n:
@@ -99,15 +98,10 @@ class DACOA():
             print("Tolerance set to: ",self.tolerance)
             print("Max number of iterations set to: ",self.maxIter)
             print("Algorithm will stop when max number of iterations is reached: ", bool(self.flagIter))
-    
-    def setCommRate(self,commRate):
-        self.commRate = commRate
+
     
     def run(self):
-        inputsImport = importlib.import_module(self.filenames[0])
-        inputs =inputsImport.inputs()
-        communicate = importlib.import_module(self.filenames[1])
-        
+
         # Initialize Primal and Dual Variables
         Np = np.size(self.xBlocks)-1  #number of primal agents
         Nd = np.size(self.muBlocks)-1 #number of dual agents
@@ -141,22 +135,23 @@ class DACOA():
                 a=self.xBlocks[p]  #lower boundary of block (included)
                 b=self.xBlocks[p+1] #upper boundary of block (not included)
                 if self.scalarFlag == 0:
-                    pGradient = inputs.gradPrimal(self,x,mu,p)
+                    pGradient = self.inputClass.gradPrimal(self,x,mu,p)
                     gradRow[a:b]=pGradient
                     pUpdate = x[a:b] - self.gamma*pGradient
-                    Xp[a:b,p] = inputs.projPrimal(pUpdate)
+                    Xp[a:b,p] = self.inputClass.projPrimal(pUpdate)
                     xVector[a:b] = np.copy(Xp[a:b,p])
                 elif self.scalarFlag == 1:
                     for i in range(a,b):
-                        pGradient = inputs.gradPrimal(self,x,mu,i)
+                        pGradient = self.inputClass.gradPrimal(self,x,mu,i)
                         gradRow[i]=pGradient
                         pUpdate = x[i] - self.gamma*pGradient
-                        Xp[i,p] = inputs.projPrimal(pUpdate)
+                        Xp[i,p] = self.inputClass.projPrimal(pUpdate)
                         xVector[i] = np.copy(Xp[i,p])
             gradMatrix =np.vstack((gradMatrix,gradRow))
+           
             
             # Communicate Primal Updates
-            [Xp, Xd, dup] = communicate.comm(self, Xp, Xd, self.commRate)
+            [Xp, Xd, dup] = self.commClass.comm(self, Xp, Xd)
             
             # Update Dual Variables if they have received updates from all primal agents
             dCount = dCount + dup
@@ -166,17 +161,17 @@ class DACOA():
                     a=self.muBlocks[d]  #lower boundary of block (included)
                     b=self.muBlocks[d+1] #upper boundary of block (not included)
                     if self.scalarFlag == 0:
-                        dGradient = inputs.gradDual(self,Xd[:,d],mu[a:b],d)
+                        dGradient = self.inputClass.gradDual(self,Xd[:,d],mu[a:b],d)
                         dUpdate = mu[a:b] + self.rho*dGradient
                         t[d]=t[d]+1
-                        mu[a:b] = inputs.projDual(dUpdate)
+                        mu[a:b] = self.inputClass.projDual(dUpdate)
                     elif self.scalarFlag == 1:
                         muNew = np.copy(mu)  #stored separately so block updates don't use new data
                         for j in range(a,b):
-                            dGradient = inputs.gradDual(self,Xd[:,d],mu[j],j)
+                            dGradient = self.inputClass.gradDual(self,Xd[:,d],mu[j],j)
                             dUpdate = mu[j] + self.rho*dGradient
                             t[d]=t[d]+1
-                            muNew[j] = inputs.projDual(dUpdate)
+                            muNew[j] = self.inputClass.projDual(dUpdate)
                         mu = np.copy(muNew)
                     dCount=np.zeros((Np,Nd))    # resets update counter for ALL dual agents if at least one has updated
             # Calculate Iteration Distance and Errors
