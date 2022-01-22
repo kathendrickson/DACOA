@@ -18,6 +18,7 @@ class commClass():
         
         B=np.random.rand(Np, Np+Nd)
         X_new = np.concatenate((Xp,Xd),axis=1)
+        X_newnew = np.concatenate((Xp,Xd),axis=1)
         dup = np.zeros((Np,Nd))
         
         for i in range(Np):
@@ -27,10 +28,17 @@ class commClass():
                 if i != j:
                     if B[i,j] <= self.commRate:
                         B[i,j] = 1
+                        #print(Xp[a:b,i])
+                        maxLoc = np.argmax(Xp[a:b,i])
+                        newVec = np.zeros(b-a)
+                        newVec[maxLoc] = 1
+                        #print(newVec)
                         X_new[a:b,j] = np.copy(Xp[a:b,i])
+                        X_newnew[a:b,j] = np.copy(newVec)
                         if j >= Np:
                             dup[i,j-Np] = 1
         
+        #Xp_new = X_newnew[:,0:Np]
         Xp_new = X_new[:,0:Np]
         Xd_new = X_new[:,Np:Np+Nd]
         

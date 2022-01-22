@@ -35,8 +35,8 @@ class WTAinputsReg():
         #Pkmin = np.min(self.Pk)
         #Vmax = np.max(self.V)
         #alpha=4*Vmax*(abs(np.log(1-Pkmax))**2)*((1-Pkmin)**5)
-        alpha= 0.001
-        Nd = optInputs.m
+        alpha= 0.01
+        Nd = optInputs.m 
         N_targets = int(optInputs.n/optInputs.m)
     
         #x_local = np.reshape(np.copy(x), [Nd, -1])
