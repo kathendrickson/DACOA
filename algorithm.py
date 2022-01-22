@@ -9,6 +9,7 @@ Created on Mon Nov  2 11:13:42 2020
 
 import numpy as np
 import scipy.linalg as la
+from WTA_inputs.inputs_wtaReg import WTAinputsReg
 
 class DACOA():
     def __init__(self, delta, gamma, rho, n, m, inputClass, commClass):
@@ -119,6 +120,8 @@ class DACOA():
         gradRow = np.zeros(self.n)
         gradMatrix= np.array(gradRow)
         xVector = np.copy(self.xInit)
+        selection = [np.zeros(self.Nd)]
+        primals = [np.zeros(self.Nd)]
         
         # Convergence Parameters
         k=0
@@ -128,7 +131,6 @@ class DACOA():
                 break
             
             prevIter = np.copy(xVector)   #used to determine convdiff
-            
             # Update Primal Variables
             for p in range(Np):
                 x = np.copy(Xp[:,p])
@@ -151,7 +153,11 @@ class DACOA():
            
             
             # Communicate Primal Updates
+            #dup=0
+            #if k in 50*np.arange(0,101):
             [Xp, Xd, dup] = self.commClass.comm(self, Xp, Xd)
+                #print("Communicated at:")
+                #print(k)
             
             # Update Dual Variables if they have received updates from all primal agents
             dCount = dCount + dup
@@ -177,6 +183,10 @@ class DACOA():
             # Calculate Iteration Distance and Errors
             k=k+1       # used to count number of iterations (may also be used to limit runs)
             newIter = np.copy(xVector)
+            xUpdated = np.copy(newIter)
+            xUpdated = np.reshape(xUpdated, (Nd, int(self.n/Nd)))
+            primals.append(xUpdated)
+            selection.append(np.argmax(xUpdated, axis=1))
             iterNorm = la.norm(prevIter - newIter)  #L2 norm of the diff between prev and current iterations
             convdiff.append(iterNorm)
             xError.append(la.norm(xVector - self.xActual,2))
@@ -191,6 +201,8 @@ class DACOA():
         self.xFinal=xVector
         self.muFinal = mu
         self.gradMatrix = gradMatrix
+        self.selection = selection
+        self.primals = primals
         return self.xFinal, self.muFinal
     
     def singlePrimal(self,x,mu,agent,inputClass):
@@ -208,7 +220,6 @@ class DACOA():
                 pUpdate = x[i] - self.gamma*pGradient
                 # print(pUpdate)
                 xUpdated[i] = inputClass.projPrimal(pUpdate)
-                
         return xUpdated
 
     def singleDual(self,x,mu,agent,inputClass):
