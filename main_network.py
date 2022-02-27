@@ -49,7 +49,7 @@ dark_purple = "#6a3d9a"
 # solution, if desired.
 
 import Network_inputs.cvxpySol_network #inputs file for CVXPY
-[xActual, muActual] = Network_inputs.cvxpySol_network.findActual()
+[xActual, muActual] = Network_inputs.cvxpySol_network.findActual(.1)
 
 
 #-----------------------------------------------------------------------------
@@ -80,6 +80,8 @@ print("Running with Scalar Blocks...")
 
 # Create Inputs Class With Beta = .1 (See [1] or readme for more details.) 
 inputs = NetworkInputs(.1)
+regError = np.sqrt((delta/.1))*np.sqrt(inputs.B/np.sqrt(15))
+print("Regularization error is bounded above by:", regError)
 
 # Create Np by Nd matrix where each entry i,j is 1 if dual agent j needs 
 # updates from prial agent i and is 0 otherwise. We can use the input A matrix 

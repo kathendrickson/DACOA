@@ -8,7 +8,7 @@ Created on Tue Oct 13 17:16:47 2020
 import cvxpy as cp
 import numpy as np
 
-def findActual():
+def findActual(beta):
     A = np.zeros((66,15))
     A[[0,5,14,1],[0,0,0,0]] = 1
     A[[0,6,3,2,16,15,1],[1,1,1,1,1,1,1]] = 1
@@ -34,6 +34,7 @@ def findActual():
     x=cp.Variable(Np)
     mu=cp.Variable(Nd)
     
+    betaFactor = beta*(11**2)
     
     constraints=[A@x <= b,
                  x>= 0,
@@ -43,7 +44,7 @@ def findActual():
     for i in range(Np):
         sum=sum + cp.atoms.elementwise.log1p.log1p(x[i])
     
-    sumLogs = -100*sum
+    sumLogs = -betaFactor*sum
     
     OrigF=sumLogs
     #
