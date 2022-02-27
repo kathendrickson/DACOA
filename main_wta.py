@@ -6,6 +6,11 @@ Created on Tue Oct 13 13:38:32 2020
 @author: kat.hendrickson
 """
 
+#TODO
+            #xUpdated = np.reshape(xUpdated, (Nd, int(self.n/Nd)))
+            #primals.append(xUpdated)
+            #selection.append(np.argmax(xUpdated, axis=1))
+
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -81,7 +86,7 @@ from algorithm import DACOA
 
 # opt.inputFiles("inputs_wta","communicate")
 
-# opt.defBlocks(pBlocks,np.arange(m))
+# opt.setBlocks(pBlocks,np.arange(m))
 # opt.useScalars()
 
 # a=opt.xBlocks[my_number]  #lower boundary of primal block (included)
@@ -185,7 +190,7 @@ for k in range(1,2):
     # #DACOA Setup
     # opt = DACOA(delta,gamma,rho, n, m, inputs, comm)
     # #opt.inputFiles("inputs_wta","WTA_inputs.communicate")
-    # opt.defBlocks(pBlocks,np.arange(m))
+    # opt.setBlocks(pBlocks,np.arange(m))
     # opt.useScalars()
     # opt.setInit(.5*np.ones(n), np.zeros(m))
     # opt.stopIf(10e-4,5000,1)
@@ -242,7 +247,7 @@ for k in range(1,2):
     
     inputsReg=WTAinputsReg(num_weapons, num_targets, Pk, V)
     opt = DACOA(delta,gamma,rho, n, m, inputsReg, comm)
-    opt.defBlocks(pBlocks,np.arange(m))
+    opt.setBlocks(pBlocks,np.arange(m))
     opt.useScalars()
     opt.setInit(.5*np.ones(n),np.zeros(m))
     opt.stopIf(0,5000,1)
@@ -290,10 +295,15 @@ for k in range(1,2):
     # xDiff=0
     # xDiffNorm = []
     # for jj in np.arange(1,numIter):
-    #     xDiff = opt.primals[jj][kk] - xSingle[jj-1][kk*num_targets:(kk+1)*num_targets]
+    #     xDiff = primals[jj][kk] - xSingle[jj-1][kk*num_targets:(kk+1)*num_targets]
     #     xDiffNorm.append(np.linalg.norm(xDiff))
-        
-    
+
+primals=[]
+selection=[]
+
+for k in np.arange(opt.numIter+1):
+    primals.append(np.reshape(opt.xValues[k], (num_weapons, num_targets)))
+    selection.append(np.argmax(primals[k], axis=1))
     
 #Plotting
 weapon1 = [0]
@@ -312,21 +322,21 @@ weapon13 = [0]
 weapon14 = [0]
 weapon15 = [0]
 for i in np.arange(1,opt.numIter+1):
-    weapon1.append(opt.selection[i][0])
-    weapon2.append(opt.selection[i][1])
-    weapon3.append(opt.selection[i][2])
-    weapon4.append(opt.selection[i][3])
-    weapon5.append(opt.selection[i][4])
-    # weapon6.append(opt.selection[i][5])
-    # weapon7.append(opt.selection[i][6])
-    # weapon8.append(opt.selection[i][7])
-    # weapon9.append(opt.selection[i][8])
-    # weapon10.append(opt.selection[i][9])
-    # weapon11.append(opt.selection[i][10])
-    # weapon12.append(opt.selection[i][11])
-    # weapon13.append(opt.selection[i][12])
-    # weapon14.append(opt.selection[i][13])
-    # weapon15.append(opt.selection[i][14])
+    weapon1.append(selection[i][0])
+    weapon2.append(selection[i][1])
+    weapon3.append(selection[i][2])
+    weapon4.append(selection[i][3])
+    weapon5.append(selection[i][4])
+    # weapon6.append(selection[i][5])
+    # weapon7.append(selection[i][6])
+    # weapon8.append(selection[i][7])
+    # weapon9.append(selection[i][8])
+    # weapon10.append(selection[i][9])
+    # weapon11.append(selection[i][10])
+    # weapon12.append(selection[i][11])
+    # weapon13.append(selection[i][12])
+    # weapon14.append(selection[i][13])
+    # weapon15.append(selection[i][14])
 
 plt.semilogy(np.arange(1,opt.numIter+1), opt.iterNorm[1:])
 plt.ylabel("Distance Between Iterations")
@@ -371,21 +381,21 @@ weapon5 = [0]
 # weapon14 = [0]
 # weapon15 = [0]
 for i in np.arange(1,opt.numIter+1):
-    weapon1.append(opt.primals[i][0])
-    weapon2.append(opt.primals[i][1])
-    weapon3.append(opt.primals[i][2])
-    weapon4.append(opt.primals[i][3])
-    weapon5.append(opt.primals[i][4])
-    # weapon6.append(opt.selection[i][5])
-    # weapon7.append(opt.selection[i][6])
-    # weapon8.append(opt.selection[i][7])
-    # weapon9.append(opt.selection[i][8])
-    # weapon10.append(opt.selection[i][9])
-    # weapon11.append(opt.selection[i][10])
-    # weapon12.append(opt.selection[i][11])
-    # weapon13.append(opt.selection[i][12])
-    # weapon14.append(opt.selection[i][13])
-    # weapon15.append(opt.selection[i][14])
+    weapon1.append(primals[i][0])
+    weapon2.append(primals[i][1])
+    weapon3.append(primals[i][2])
+    weapon4.append(primals[i][3])
+    weapon5.append(primals[i][4])
+    # weapon6.append(selection[i][5])
+    # weapon7.append(selection[i][6])
+    # weapon8.append(selection[i][7])
+    # weapon9.append(selection[i][8])
+    # weapon10.append(selection[i][9])
+    # weapon11.append(selection[i][10])
+    # weapon12.append(selection[i][11])
+    # weapon13.append(selection[i][12])
+    # weapon14.append(selection[i][13])
+    # weapon15.append(selection[i][14])
 
 plt.plot(np.arange(2,numIter+1), weapon5[2:])
 plt.ylabel("Target Choice")
@@ -424,7 +434,7 @@ plt.show()
 # for k in np.arange(0,26):   #decide how many groups to run
 #     inputsReg=WTAinputsReg(num_weapons, num_targets, Pk, V)
 #     opt = DACOA(delta,gamma,rho, n, m, inputsReg, comm)
-#     opt.defBlocks(pBlocks,np.arange(m))
+#     opt.setBlocks(pBlocks,np.arange(m))
 #     opt.useScalars()
 #     opt.setInit(initP,initD)
 #     opt.stopIf(10e-4,100,1)
@@ -446,21 +456,21 @@ plt.show()
 #         Pk[i][selection[i]] = Pk[i][selection[i]]+rate
 #     #print(Pk)
 #     for i in np.arange(1,opt.numIter+1):
-#         weapon1.append(opt.selection[i][0])
-#         weapon2.append(opt.selection[i][1])
-#         weapon3.append(opt.selection[i][2])
-#         weapon4.append(opt.selection[i][3])
-#         weapon5.append(opt.selection[i][4])
-#         weapon6.append(opt.selection[i][5])
-#         weapon7.append(opt.selection[i][6])
-#         weapon8.append(opt.selection[i][7])
-#         weapon9.append(opt.selection[i][8])
-#         weapon10.append(opt.selection[i][9])
-#         weapon11.append(opt.selection[i][10])
-#         weapon12.append(opt.selection[i][11])
-#         weapon13.append(opt.selection[i][12])
-#         weapon14.append(opt.selection[i][13])
-#         weapon15.append(opt.selection[i][14])
+#         weapon1.append(selection[i][0])
+#         weapon2.append(selection[i][1])
+#         weapon3.append(selection[i][2])
+#         weapon4.append(selection[i][3])
+#         weapon5.append(selection[i][4])
+#         weapon6.append(selection[i][5])
+#         weapon7.append(selection[i][6])
+#         weapon8.append(selection[i][7])
+#         weapon9.append(selection[i][8])
+#         weapon10.append(selection[i][9])
+#         weapon11.append(selection[i][10])
+#         weapon12.append(selection[i][11])
+#         weapon13.append(selection[i][12])
+#         weapon14.append(selection[i][13])
+#         weapon15.append(selection[i][14])
 #     fullIter = fullIter + opt.numIter
     
 # xReg = np.copy(xUpdated)
