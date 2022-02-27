@@ -9,55 +9,54 @@ Created on Mon Nov  2 11:13:42 2020
 
 import numpy as np
 import scipy.linalg as la
-from WTA_inputs.inputs_wtaReg import WTAinputsReg
 
 class DACOA():
     def __init__(self, delta, gamma, rho, n, m, inputClass, commClass):
-        """Initialize DACOA algorithm with inputs.
-        Parameters:
-            delta: dual regularization parameter
-            gamma: primal stepsize
-            rho: dual stepsize
-            n: size of the primal variable
-            m: size of the dual variable
-            inputClass: input class that contains the gradPrimal, gradDual, projPrimal, and projDual functions
-            commClass: input class that contains the comm function
+        """Initialize DACOA class. 
+        Inputs:  
+            * delta: dual regularization parameter  
+            * gamma: primal stepsize  
+            * rho: dual stepsize  
+            * n: dimension of entire primal variable  
+            * m: dimension of entire dual variable  
+            * inputClass: input class that contains the gradPrimal, gradDual, projPrimal, and projDual functions  
+            * commClass: input class that contains the comm function
         """
         self.delta=delta
         self.gamma=gamma
         self.rho=rho
-        self.n = n      # dimension of entire primal vector
-        self.m = m      # dimension of entire dual vector
+        self.n = n
+        self.m = m 
         
         #Default Values:
-        self.xActual=np.zeros(n)  #can be updated with setActual function
-        self.muActual=np.zeros(m) #can be updated with setActual function
-        self.flagActual=0   #sets flag to zero - used to determine whether to store error data later.
-        self.xBlocks=np.arange(n+1)    #vector blocks are set with defBlocks
-        self.muBlocks=np.arange(m+1)      #vector blocks are set with defBlocks
+        self.xActual=np.zeros(n)
+        """Value used to compute primal error; Set with `DACOA.setActual` method."""
+        self.muActual=np.zeros(m)
+        """Value used to compute dual error; Set with `DACOA.setActual` method."""
+        self.flagActual=0   #used to determine whether to store error data later.
+        self.xBlocks=np.arange(n+1)    
+        """ Array that defines the dimensions of the primal blocks. Set with `DACOA.setBlocks` method."""
+        self.muBlocks=np.arange(m+1)      
+        """ Array that defines the dimensions of the dual blocks. Set with `DACOA.setBlocks` method."""
         self.tolerance = 10 ** -8   #updated with stopIf function
-        self.maxIter = 10 ** 3      #updated with stopIf function
-        self.flagIter=0     #updated with stopIf function
+        self.maxIter = 10 ** 5      #updated with stopIf function
+        self.maxIterBool=1     #updated with stopIf function
         self.xInit = np.zeros(n)
+        """ Initial primal variable that is used at the start of optimization.
+        The default value is a zero vector. Set with `DACOA.setInit` method. """
         self.muInit = np.zeros(m)
+        """ Initial dual variable that is used at the start of optimization.
+        The default value is a zero vector. Set with `DACOA.setInit` method. """
         self.scalarFlag=0
-        self.commRate = 1
         self.inputClass = inputClass
         self.commClass = commClass
 
     def setActual(self,xActual,muActual):
-        """If known, true values for primal and dual variables may be set
-        and used for error calculations.
-        
-        Inputs:
-            xActual - true value for primal variable
-            muActual - true value for dual variable
-        
-        Outputs:
-            If set, class values self.xError and self.muError will be calculated.
-            These vectors calculate the error calculate the L2 norm of the
-            distance between xActual and the iterate's value for the primal 
-            variable."""
+        """If known, true values for primal (`DACOA.xActual`) and dual (`DACOA.muActual`) variables may be set
+        and used for error calculations. If set, values `DACOA.xError` and `DACOA.muError` will be calculated.  
+            These vectors calculate the L2 norm of the
+            distance between the true value and the iterate's value for the primal and dual
+            variables."""
         self.flagActual=1
         if np.size(xActual) == self.n:
             self.xActual=np.copy(xActual)
@@ -70,14 +69,18 @@ class DACOA():
             self.flagActual=0
             print("Error: Dimension mismatch between muActual and previously defined m.")
         
-    ## Divide vectors into blocks larger than scalars
-    def defBlocks(self,xBlocks,muBlocks):
+    def setBlocks(self,xBlocks,muBlocks):
+        """ Defines the non-scalar primal and dual blocks. xBlocks is an array containing the first index for each primal block. 
+        For example, with two primal agents, Agent 1's block always starts at 0 but Agent 2's block may start at entry 4. You'd then have the array xBlock = np.array([0,4]).  
+        Similarly, muBlocks is an array containing the beginning indices for all dual agents."""
         self.xBlocks = np.copy(xBlocks)
         self.xBlocks = np.append(self.xBlocks,[self.n])  #used to know the end of the last block.
         self.muBlocks = np.copy(muBlocks)
         self.muBlocks = np.append(self.muBlocks,[self.m])  #used to know the end of the last block.
     
     def setInit(self,xInit,muInit):
+        """Sets the initial values for the primal variable `DACOA.xInit` and the dual variable `DACOA.muInit`.  
+        If this method is not used, zero vectors are used as a default."""
         if np.size(xInit) == self.n:
             self.xInit=np.copy(xInit)
         else:
@@ -90,17 +93,17 @@ class DACOA():
     def useScalars(self):
         self.scalarFlag=1
     
-    ## Change Algorithm Stopping Parameters
-    def stopIf(self,tol,maxIter,flagIter, suppress=1):
-        self.tolerance = tol
-        self.maxIter = maxIter
-        self.flagIter = flagIter    #1 = stop based when maxIter reached
-        if suppress == 0:
-            print("Tolerance set to: ",self.tolerance)
-            print("Max number of iterations set to: ",self.maxIter)
-            print("Algorithm will stop when max number of iterations is reached: ", bool(self.flagIter))
 
-    
+    def stopIf(self,tolerance,maxIter,maxIterBool=1):
+        """Sets optimization stopping parameters by setting the following DACOA method values:
+            * `DACOA.tolerance` : tolerance for distance between iterations. When this tolerance is reached, the optimization algorithm stops.  
+            * `DACOA.maxIter` : max number of iterations to run. When this number of iterations is reached, the optimization algorithm stops.  
+            * `DACOA.maxIterBool` : optional boolean input that determines whether the optimization code always stops when `DACOA.maxIter` is reached (1) 
+            or whether it ignores  `DACOA.maxIter` and instead runs until  `DACOA.tolerance` is reached (0). Default value is (1)."""
+        self.tolerance = tolerance
+        self.maxIter = maxIter
+        self.maxIterBool = maxIterBool    #1 = stop based when maxIter reached
+
     def run(self):
 
         # Initialize Primal and Dual Variables
@@ -120,14 +123,16 @@ class DACOA():
         gradRow = np.zeros(self.n)
         gradMatrix= np.array(gradRow)
         xVector = np.copy(self.xInit)
-        selection = [np.zeros(self.Nd)]
-        primals = [np.zeros(self.Nd)]
+        xValues = [np.zeros(self.n)]
         
         # Convergence Parameters
         k=0
         while convdiff[k] > self.tolerance:
             
-            if (self.flagIter == 1 and k >= self.maxIter):
+            if (k % 500 == 0):
+                print(k, "iterations...")
+            
+            if (self.maxIterBool == 1 and k >= self.maxIter):
                 break
             
             prevIter = np.copy(xVector)   #used to determine convdiff
@@ -183,10 +188,7 @@ class DACOA():
             # Calculate Iteration Distance and Errors
             k=k+1       # used to count number of iterations (may also be used to limit runs)
             newIter = np.copy(xVector)
-            xUpdated = np.copy(newIter)
-            xUpdated = np.reshape(xUpdated, (Nd, int(self.n/Nd)))
-            primals.append(xUpdated)
-            selection.append(np.argmax(xUpdated, axis=1))
+            xValues.append(newIter)
             iterNorm = la.norm(prevIter - newIter)  #L2 norm of the diff between prev and current iterations
             convdiff.append(iterNorm)
             xError.append(la.norm(xVector - self.xActual,2))
@@ -201,8 +203,7 @@ class DACOA():
         self.xFinal=xVector
         self.muFinal = mu
         self.gradMatrix = gradMatrix
-        self.selection = selection
-        self.primals = primals
+        self.xValues = xValues
         return self.xFinal, self.muFinal
     
     def singlePrimal(self,x,mu,agent,inputClass):
