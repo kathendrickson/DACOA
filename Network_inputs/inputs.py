@@ -40,7 +40,7 @@ class NetworkInputs:
             Mj = np.append(Mj, np.linalg.norm(A[j]))
         self.Mj = Mj
         self.Dx = 10*np.sqrt(15)
-        self.B = (-beta * 15 *np.log(11))/(np.min(self.barray))
+        self.B = (self.betaFactor * 15 *np.log(11))/(np.min(self.barray))
                 
     
     def gradPrimal(self,optInputs,x,mu,agent):
@@ -69,6 +69,7 @@ class NetworkInputs:
     
     def projDual(self,mu):
         mu[mu<0]=0
+        mu[mu>self.B] = self.B/15
         mu_hat=mu
         return mu_hat
 
