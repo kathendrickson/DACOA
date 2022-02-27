@@ -10,7 +10,7 @@ import numpy as np
 
 class NetworkInputs:
 # Problem Parameters
-    def __init__(self, betaFactor):
+    def __init__(self, beta):
         A = np.zeros((66,15))
         A[[0,5,14,1],[0,0,0,0]] = 1
         A[[0,6,3,2,16,15,1],[1,1,1,1,1,1,1]] = 1
@@ -31,8 +31,17 @@ class NetworkInputs:
         
         self.barray= np.array([50, 50, 23, 32, 15, 39, 31, 11, 38, 16, 35, 11, 20, 36, 26, 23, 27, 50, 50, 33, 10, 19, 19, 37, 31, 27, 15, 18, 7, 39, 33, 25, 30, 12, 26, 10, 5, 11, 28, 13, 50, 50, 50, 39, 37, 32, 5, 32, 22, 18, 30, 15, 36, 38, 8, 20, 35, 34, 8, 16, 11, 12, 39, 35, 6, 39])
         
-        self.betaFactor = betaFactor
-    #ATA = np.transpose(A) @ A
+        self.betaFactor = beta*(11**2)
+
+        self.maxHessianEntry = self.betaFactor
+        self.M = np.linalg.norm(A)
+        Mj = []
+        for j in range(66):
+            Mj = np.append(Mj, np.linalg.norm(A[j]))
+        self.Mj = Mj
+        self.Dx = 10*np.sqrt(15)
+        self.B = (-beta * 15 *np.log(11))/(np.min(self.barray))
+                
     
     def gradPrimal(self,optInputs,x,mu,agent):
         a=optInputs.xBlocks[agent]  #lower boundary of block (included)

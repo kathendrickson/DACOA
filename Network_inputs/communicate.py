@@ -9,8 +9,9 @@ Created on Mon Nov  2 20:09:38 2020
 import numpy as np
 
 class commClass():
-    def __init__(self, commRate):
+    def __init__(self, commRate, dualNeighbors):
         self.commRate = commRate
+        self.dualNeighbors = dualNeighbors  #Np by Nd matrix where each entry i,j is 1 if dual agent j needs updates from primal agent i and is 0 otherwise.
 
     def comm(self, optInputs, Xp, Xd):
         Np = optInputs.Np
@@ -18,7 +19,7 @@ class commClass():
         
         B=np.random.rand(Np, Np+Nd)
         X_new = np.concatenate((Xp,Xd),axis=1)
-        dup = np.zeros((Np,Nd))
+        dup = np.ones((Np,Nd)) - self.dualNeighbors
         
         for i in range(Np):
             a=optInputs.xBlocks[i]  #lower boundary of block (included)
