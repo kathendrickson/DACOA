@@ -11,7 +11,7 @@ import numpy as np
 import scipy.linalg as la
 
 class DACOA():
-    def __init__(self, delta, gamma, rho, n, m, inputClass, commClass):
+    def __init__(self, delta, gamma, rho, n, m, inputClass, commClass, updateProb=1):
         """Initialize DACOA class. 
         Inputs:  
             * delta: dual regularization parameter  
@@ -21,12 +21,14 @@ class DACOA():
             * m: dimension of entire dual variable  
             * inputClass: input class that contains the gradPrimal, gradDual, projPrimal, and projDual functions  
             * commClass: input class that contains the comm function
+            * updateProb: optional input that specifies the probability a primal agent performs an update at any given time k. Default value is 1. 
         """
         self.delta=delta
         self.gamma=gamma
         self.rho=rho
         self.n = n
         self.m = m 
+        self.updateProb = updateProb
         
         #Default Values:
         self.xActual=np.zeros(n)
@@ -125,6 +127,7 @@ class DACOA():
         xVector = np.copy(self.xInit)
         xValues = [np.zeros(self.n)]
         
+        
         # Convergence Parameters
         k=0
         while convdiff[k] > self.tolerance:
@@ -141,8 +144,12 @@ class DACOA():
                 x = np.copy(Xp[:,p])
                 a=self.xBlocks[p]  #lower boundary of block (included)
                 b=self.xBlocks[p+1] #upper boundary of block (not included)
+                updateDraw = np.random.rand(1)
                 if self.scalarFlag == 0:
-                    pGradient = self.inputClass.gradPrimal(self,x,mu,p)
+                    if updateDraw <= self.updateProb:
+                        pGradient = self.inputClass.gradPrimal(self,x,mu,p)
+                    else:
+                        pGradient = np.zeros(b-a)
                     gradRow[a:b]=pGradient
                     pUpdate = x[a:b] - self.gamma*pGradient
                     Xp[a:b,p] = self.inputClass.projPrimal(pUpdate)
@@ -250,3 +257,5 @@ class DACOA():
                     i += 1
         
         return muUpdated
+    
+

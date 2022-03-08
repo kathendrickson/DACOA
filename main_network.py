@@ -72,7 +72,7 @@ print("Dual stepsize, rho:", rho)
 
 
 #-----------------------------------------------------------------------------
-#       Scalars vs Block Runs
+#       Scalars vs Block Runs with Primal Updates Occuring Every K
 #-----------------------------------------------------------------------------
 
 ## Scalar Blocks
@@ -91,7 +91,7 @@ scalarDualNeighbors = np.transpose(inputs.A)
 # Create Communication Class with Comm Rate of 0.50 (agents communicate ~50% of the time)
 comm50scalar = commClass(.5, scalarDualNeighbors)
 
-# Create DACOA class with inputs defined above.
+# Create DACOA class with inputs defined above
 scalarBlocks = DACOA(delta, gamma, rho, n, m, inputs, comm50scalar)
 
 # Optional: Set the "actual" primal and dual values to compute error later
@@ -148,16 +148,96 @@ plt.ylabel("$|| x(k) - x(k-1)||$")
 plt.xlabel("Time, k")
 plt.title("Convergence for Scalar and Non-Scalar Blocks")
 plt.legend()
-plt.savefig('blocks.eps')
+#plt.savefig('blocks.eps')
 plt.show()
 
 plt.semilogy(np.arange(1,scalarBlocks.numIter+1), scalarBlocks.xError[1:], color= dark_blue, label="Scalar Blocks")
 plt.semilogy(np.arange(1,vecBlocks.numIter+1), vecBlocks.xError[1:], color= red, linestyle= "dotted", label="Non-Scalar Blocks")
-plt.ylabel("Distance from CVXPY Solution")
+plt.ylabel('$|| x - \hat{x}||$')
 plt.xlabel("Time, k")
 plt.title("Error for Scalar and Non-Scalar Blocks")
 plt.legend()
 #plt.savefig('figure.eps',bbox_inches = "tight",dpi=300)
+plt.show()
+
+#-----------------------------------------------------------------------------
+#       Scalars vs Block Runs with Primal Updates Occuring 50% of the Time
+#-----------------------------------------------------------------------------
+
+## Scalar Blocks
+print("Running with Scalar Blocks...")
+
+# Create Inputs Class With Beta = .1 (See [1] or readme for more details.) 
+inputs = NetworkInputs(.1)
+regError = np.sqrt((delta/.1))*np.sqrt(inputs.B/np.sqrt(15))
+print("Regularization error is bounded above by:", regError)
+
+# Create Np by Nd matrix where each entry i,j is 1 if dual agent j needs 
+# updates from prial agent i and is 0 otherwise. We can use the input A matrix 
+# to do so for scalar blocks.
+scalarDualNeighbors = np.transpose(inputs.A) 
+
+# Create Communication Class with Comm Rate of 0.50 (agents communicate ~50% of the time)
+comm50scalar = commClass(.5, scalarDualNeighbors)
+
+# Create DACOA class with inputs defined above
+scalarBlocks = DACOA(delta, gamma, rho, n, m, inputs, comm50scalar, 0.5)
+
+# Optional: Set the "actual" primal and dual values to compute error later
+#           If not set, error will not be calculated.
+scalarBlocks.setActual(xActual,muActual)
+
+# Optional: Set the initial primal and dual values
+#           If not set, zero vectors will be used.
+scalarBlocks.setInit(0*np.ones(n), np.zeros(m))
+
+# Optional: Set stopping parameters, stopIf(tol, maxIter, maxIterBool=1), where
+#               tol = tolerance for distance between iterations, 
+#               maxIter = max number of iterations to run
+#               maxIterBool = whether to stop at the maxIter (1) or continue 
+#                               running until tol is reached (0). 
+#           If not set, tol = 10**-8, maxIter = 10 ** 5, maxIterBool=1.
+scalarBlocks.stopIf(-1,3000)    #!!tolerance negative since primal updates do not occur every iteration
+
+# Run DACOA for scalar blocks
+scalarBlocks.run()
+
+#----------------------------------------
+## Separable Blocks
+print("Running with Separable Blocks...")
+
+# Create non-scalar block arrays : xBlocks is an array containing the first index for each primal block. 
+        #Similarly, muBlocks is an array containing the beginning indices for all dual agents.
+xBlocks = np.array([0,5,10])    #Primal agent 1 is from 0 to 4, agent 2 is from 5 to 9, and agent 3 is from 10 to the end.
+muBlocks = np.array([0,17,40])
+
+# Create dualNeighbors matrix for new block setup. (See above for more discussion.)
+blockDualNeighbors = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+# Create comm class
+comm50blocks = commClass(.5, blockDualNeighbors)
+
+# Create DACOA class with inputs defined above.
+vecBlocks = DACOA(delta, gamma, rho, n, m, inputs, comm50blocks, 0.50)
+
+# Set optional inputs
+vecBlocks.setActual(xActual,muActual)
+vecBlocks.setInit(0*np.ones(n), np.zeros(m))
+vecBlocks.stopIf(-1,3000)
+vecBlocks.setBlocks(xBlocks,muBlocks)
+
+# Run DACOA for non-scalar blocks
+vecBlocks.run()
+
+#----------------------------------------
+## Figure Plotting
+plt.semilogy(np.arange(1,scalarBlocks.numIter+1), scalarBlocks.xError[1:], color= dark_blue, label="Scalar Blocks")
+plt.semilogy(np.arange(1,vecBlocks.numIter+1), vecBlocks.xError[1:], color= red, linestyle= "dotted", label="Non-Scalar Blocks")
+plt.ylabel('$|| x - \hat{x}||$')
+plt.xlabel("Time, k")
+plt.title("Error for Scalar and Non-Scalar Blocks")
+plt.legend()
+plt.savefig('blocks.eps')
 plt.show()
 
 
@@ -173,7 +253,7 @@ blockDualNeighbors = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
 # Create communication classes for different comm rates:
 comm25 = commClass(.25, blockDualNeighbors)
 comm50 = commClass(.50, blockDualNeighbors)
-comm75 = commClass(.50, blockDualNeighbors)
+comm75 = commClass(.75, blockDualNeighbors)
 comm100 = commClass(1, blockDualNeighbors)
 
 # Run for 25% Comms
@@ -229,7 +309,7 @@ plt.semilogy(np.arange(1,opt25.numIter+1), opt25.xError[1:], color= dark_blue, l
 plt.semilogy(np.arange(1,opt50.numIter+1), opt50.xError[1:], color= red, linestyle = "dotted", label="50% Comm. Rate")
 plt.semilogy(np.arange(1,opt75.numIter+1), opt75.xError[1:], color= dark_green, linestyle = "dashed", label="75% Comm. Rate")
 plt.semilogy(np.arange(1,opt100.numIter+1), opt100.xError[1:], color= dark_orange, linestyle = "dashdot", label="100% Comm. Rate")
-plt.ylabel("Distance from CVXPY Solution")
+plt.ylabel('$|| x - \hat{x}||$')
 plt.xlabel("Time, k")
 plt.title("Communication Rate and Error")
 plt.legend()
@@ -240,25 +320,33 @@ plt.show()
 #       Varying the Amount of Diagonal Dominance
 #-----------------------------------------------------------------------------
 
+inputsBeta10 = NetworkInputs(.10)
 inputsBeta25 = NetworkInputs(.25)
-inputsBeta50 = NetworkInputs(.50)
+inputsBeta75 = NetworkInputs(.75)
 
-beta10 = DACOA(delta, gamma, rho, n, m, inputsBeta25, comm75)
+beta10 = DACOA(delta, gamma, rho, n, m, inputsBeta10, comm75)
 beta10.setInit(0*np.ones(n), np.zeros(m))
 beta10.stopIf(10 ** -6,10**5)
 beta10.setBlocks(xBlocks,muBlocks)
 beta10.run()
 
-beta50 = DACOA(delta, gamma, rho, n, m, inputsBeta50, comm75)
-beta50.setInit(0*np.ones(n), np.zeros(m))
-beta50.stopIf(10 ** -6,10**5)
-beta50.setBlocks(xBlocks,muBlocks)
-beta50.run()
+
+beta25 = DACOA(delta, gamma, rho, n, m, inputsBeta25, comm75)
+beta25.setInit(0*np.ones(n), np.zeros(m))
+beta25.stopIf(10 ** -6,10**5)
+beta25.setBlocks(xBlocks,muBlocks)
+beta25.run()
+
+beta75 = DACOA(delta, gamma, rho, n, m, inputsBeta75, comm75)
+beta75.setInit(0*np.ones(n), np.zeros(m))
+beta75.stopIf(10 ** -6,10**5)
+beta75.setBlocks(xBlocks,muBlocks)
+beta75.run()
 
 
-plt.semilogy(np.arange(1,vecBlocks.numIter+1), vecBlocks.iterNorm[1:], color= dark_blue, label="Beta = .10")
-plt.semilogy(np.arange(1,beta10.numIter+1), beta10.iterNorm[1:], color= red, linestyle= "dotted",  label="Beta = .25")
-plt.semilogy(np.arange(1,beta50.numIter+1), beta50.iterNorm[1:], color= dark_green, linestyle= "dashed", label="Beta = .50")
+plt.semilogy(np.arange(1,beta10.numIter+1), beta10.iterNorm[1:], color= dark_blue, label="Beta = 0.10")
+plt.semilogy(np.arange(1,beta25.numIter+1), beta25.iterNorm[1:], color= red, linestyle= "dotted",  label="Beta = 0.25")
+plt.semilogy(np.arange(1,beta75.numIter+1), beta75.iterNorm[1:], color= dark_green, linestyle= "dashed", label="Beta = 0.75")
 plt.ylabel("$|| x(k) - x(k-1)||$")
 plt.xlabel("Time, k")
 plt.title("Diagonal Dominance and Convergence")

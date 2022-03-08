@@ -69,7 +69,7 @@ class NetworkInputs:
     
     def projDual(self,mu):
         mu[mu<0]=0
-        mu[mu>self.B] = self.B/15
+        mu[mu>self.B] = self.B
         mu_hat=mu
         return mu_hat
 
