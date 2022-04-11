@@ -132,8 +132,8 @@ class DACOA():
         k=0
         while convdiff[k] > self.tolerance:
             
-            if (k % 500 == 0):
-                print(k, "iterations...")
+            # if (k % 500 == 0):
+            #     print(k, "iterations...")
             
             if (self.maxIterBool == 1 and k >= self.maxIter):
                 break

@@ -220,16 +220,16 @@ for k in range(1,2):
     EV = 100.
     index = 0.
     for i in range(int(pow(num_targets, num_weapons))):
-      achieved_comp = np.ones((num_targets,1));
-      remainder = i;
+      achieved_comp = np.ones((num_targets,1))
+      remainder = i
       for j in range(num_weapons):
-        target = int(np.floor(remainder/pow(num_targets, num_weapons-j-1)));
+        target = int(np.floor(remainder/pow(num_targets, num_weapons-j-1)))
     
-        remainder = np.mod(remainder, pow(num_targets, num_weapons-j-1));
+        remainder = np.mod(remainder, pow(num_targets, num_weapons-j-1))
         #print("W: %d \t T: %d"%(j, target))
-        achieved_comp[target] = achieved_comp[target]*inputs.Q[j, target];
+        achieved_comp[target] = achieved_comp[target]*inputs.Q[j, target]
     
-      value = np.dot(np.reshape(achieved_comp,-1), np.reshape(inputs.V, -1));
+      value = np.dot(np.reshape(achieved_comp,-1), np.reshape(inputs.V, -1))
     
       if value < EV:
         EV = value

@@ -55,19 +55,26 @@ class WTAinputsReg():
     def gradDual(self,optInputs,x,mu,agent):
         gradient = self.A[agent,:] @ x - self.b[agent] - optInputs.delta*mu
         return gradient
-    
-    def projPrimal(self,x):
-        if x > 1.:
-            x = 1.
-        if x < 0.:
-            x = 0.
-        x_hat = np.copy(x)
-        return x_hat
-    
-    def projDual(self,mu):
-        if mu < 0:
-            mu=0
-        mu_hat=mu
-        return mu_hat
+
+        # def projPrimal(self,x):
+        #    if x > 1.:
+        #        x = 1.
+        #    if x < 0.:
+        #        x = 0.
+        #    x_hat = np.copy(x)
+        #    return x_hat
+    def projPrimal(self, x):
+        x = np.where(x > 1., 1., x)
+        x = np.where(x < 0., 0., x)
+        return x
+
+    # def projDual(self,mu):
+    #    if mu < 0:
+    #        mu=0
+    #    mu_hat=mu
+    #    return mu_hat
+    def projDual(self, mu):
+        mu = np.where(mu < 0, 0, mu)
+        return mu
     
             
