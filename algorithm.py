@@ -120,8 +120,8 @@ class DACOA():
         dCount = np.zeros((Np,Nd))    #initialize dCount vector
         t = np.zeros(Nd)    #initialize t vector for each dual agent
         convdiff=[self.tolerance + 100]        #initialize convergence distance measure
-        xError=[la.norm(self.xInit- self.xActual,2)]
-        muError=[la.norm(mu-self.muActual,2)]
+        #xError=[la.norm(self.xInit- self.xActual,2)]
+        #muError=[la.norm(mu-self.muActual,2)]
         gradRow = np.zeros(self.n)
         gradMatrix= np.array(gradRow)
         xVector = np.copy(self.xInit)
@@ -138,7 +138,7 @@ class DACOA():
             if (self.maxIterBool == 1 and k >= self.maxIter):
                 break
             
-            prevIter = np.copy(xVector)   #used to determine convdiff
+            #prevIter = np.copy(xVector)   #used to determine convdiff
             # Update Primal Variables
             for p in range(Np):
                 x = np.copy(Xp[:,p])
@@ -196,16 +196,16 @@ class DACOA():
             k=k+1       # used to count number of iterations (may also be used to limit runs)
             newIter = np.copy(xVector)
             xValues.append(newIter)
-            iterNorm = la.norm(prevIter - newIter)  #L2 norm of the diff between prev and current iterations
-            convdiff.append(iterNorm)
-            xError.append(la.norm(xVector - self.xActual,2))
-            muError.append(la.norm(mu-self.muActual,2))
+            #iterNorm = la.norm(prevIter - newIter)  #L2 norm of the diff between prev and current iterations
+            convdiff.append(1)
+            #xError.append(la.norm(xVector - self.xActual,2))
+            #muError.append(la.norm(mu-self.muActual,2))
         
-        if self.flagActual == 1:
-            self.xError = xError
-            self.muError = muError
+        #if self.flagActual == 1:
+            #self.xError = xError
+            #self.muError = muError
         
-        self.iterNorm = convdiff
+        self.iterNorm = 1
         self.numIter = k
         self.xFinal=xVector
         self.muFinal = mu
