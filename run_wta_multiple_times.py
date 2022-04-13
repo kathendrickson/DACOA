@@ -29,7 +29,7 @@ gamma = .1 #primal stepsize
 
 normDiff = [0]
 evDiff = [0]
-number_of_time_you_want_to_run = 50
+number_of_time_you_want_to_run = 1000
 error=np.zeros(number_of_time_you_want_to_run)
 numIter = np.zeros(number_of_time_you_want_to_run)
 
