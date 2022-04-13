@@ -29,11 +29,13 @@ gamma = .1 #primal stepsize
 
 normDiff = [0]
 evDiff = [0]
-number_of_time_you_want_to_run = 1000
+number_of_time_you_want_to_run = 50
+error=np.zeros(number_of_time_you_want_to_run)
+numIter = np.zeros(number_of_time_you_want_to_run)
 
 for k in range(0,number_of_time_you_want_to_run):
-    Pk = np.random.uniform(low=0.6, high=0.9, size=(num_weapons, num_targets))
-    V = np.random.uniform(low=25, high=100, size=(num_targets))
+    Pk = np.random.uniform(low=0.2, high=0.9, size=(num_weapons, num_targets))
+    V = np.random.uniform(low=2, high=10, size=(num_targets))
 
     inputs=WTAinputs(num_weapons, num_targets, Pk,V)
     comm =commClass(1)
@@ -71,14 +73,14 @@ for k in range(0,number_of_time_you_want_to_run):
     opt.setBlocks(pBlocks,np.arange(m))
     opt.useScalars()
     opt.setInit((1./num_targets)*np.ones(n),np.zeros(m))
-    opt.stopIf(-0.10,5000,1)
+    opt.stopIf(-0.10,10000,1)
     #DACOA Run and Post-Processing
     opt.run()
     xUpdated = np.copy(opt.xFinal)
     xUpdated = np.reshape(xUpdated, (num_weapons, num_targets))
     #print(xUpdated)
     selection = np.argmax(xUpdated, axis=1)
-    numIter = opt.numIter
+    numIter[k] = opt.numIter
     # print("~~~")
     # print("DACOA with Reg:")
     # print(selection)
@@ -91,11 +93,16 @@ for k in range(0,number_of_time_you_want_to_run):
     valueReg = np.dot(np.reshape(achieved_comp,-1), np.reshape(inputs.V, -1));
     # print(valueReg)
     # # print(numIter)
-    row = [np.reshape(actual,(-1)), EV, selection, valueReg]
+    error[k] = (valueReg-EV)/EV
+    row = [np.reshape(actual,(-1)), EV, selection, valueReg, error]
+    
+    
 
     with open('./ran_multiple_times.csv','a') as f:
         writer = csv.writer(f)
         writer.writerow(row)
 
-    print(k)
+    print(k,error[k])
+
+print(np.mean(error))
 
